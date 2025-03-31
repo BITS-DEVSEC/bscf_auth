@@ -13,10 +13,11 @@ gem "puma", ">= 5.0"
 # Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
 gem "bcrypt", "~> 3.1.7"
 
+gem "bscf-core"
+
 gem "active_model_serializers", "~> 0.10.13"
 gem "ancestry"
 gem "bootsnap", require: false
-gem "bscf-core"
 gem "ransack"
 gem "jwt"
 gem "tzinfo-data", platforms: %i[mingw mswin x64_mingw jruby]
