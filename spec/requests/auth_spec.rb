@@ -20,7 +20,7 @@ RSpec.describe "Auth", type: :request do
           source_of_funds: "Business",
           gender: :male,
           kyc_status: "pending",
-          fayda_id: Random.hex(10),
+          fayda_id: Random.hex(10)
         },
         address: {
           city: "Addis Ababa",

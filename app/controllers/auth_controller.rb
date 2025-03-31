@@ -28,7 +28,7 @@ class AuthController < ApplicationController
             if @business.save
               render json: {
                 success: true,
-                user: @user.as_json(except: [:password_digest]),
+                user: @user.as_json(except: [ :password_digest ]),
                 user_profile: @user_profile,
                 business: @business,
                 address: @address
@@ -66,14 +66,14 @@ class AuthController < ApplicationController
     return render json: { success: false, error: "Profile not complete" }, status: :unauthorized unless user_profile
 
     token = @token_service.encode({
-      user: user.as_json(except: ["password_digest", "created_at", "updated_at"]),
+      user: user.as_json(except: [ "password_digest", "created_at", "updated_at" ]),
       user_profile: user_profile.as_json
     })
 
     render json: {
       success: true,
       token: token,
-      user: user.as_json(except: [:password_digest]),
+      user: user.as_json(except: [ :password_digest ]),
       user_profile: user_profile.as_json
     }
   end
@@ -88,14 +88,14 @@ class AuthController < ApplicationController
     return render json: { success: false, error: "Unauthorized access" }, status: :unauthorized unless user_role
 
     token = @token_service.encode({
-      user: user.as_json(except: ["password_digest", "created_at", "updated_at"]),
+      user: user.as_json(except: [ "password_digest", "created_at", "updated_at" ]),
       role: user_role.role.name
     })
 
     render json: {
       success: true,
       token: token,
-      user: user.as_json(except: [:password_digest]),
+      user: user.as_json(except: [ :password_digest ]),
       role: user_role.role.name
     }
   end

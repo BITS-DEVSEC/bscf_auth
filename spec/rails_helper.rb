@@ -20,5 +20,5 @@ RSpec.configure do |config|
   config.filter_rails_from_backtrace!
   config.include FactoryBot::Syntax::Methods
   FactoryBot.definition_file_paths << Gem.loaded_specs['bscf-core'].full_gem_path + '/spec/factories'
-  #FactoryBot.find_definitions
+  # FactoryBot.find_definitions
 end

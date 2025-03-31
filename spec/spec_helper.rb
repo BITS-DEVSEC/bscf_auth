@@ -1,7 +1,7 @@
 require "simplecov"
 # require "./spec/support/models/shared_examples"
 # require "./spec/support/requests/shared_requests"
-#require "rspec/retry"
+# require "rspec/retry"
 
 RSpec.configure do |config|
   config.expect_with :rspec do |expectations|
@@ -21,8 +21,8 @@ RSpec.configure do |config|
   config.order = :random
   Kernel.srand config.seed
 
-#  config.verbose_retry = true
-  #config.display_try_failure_messages = true
+  #  config.verbose_retry = true
+  # config.display_try_failure_messages = true
   config.around :each, :js do |ex|
     ex.run_with_retry retry: 3
   end
