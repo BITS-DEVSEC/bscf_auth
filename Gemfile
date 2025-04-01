@@ -15,6 +15,8 @@ gem "bcrypt", "~> 3.1.7"
 
 gem "bscf-core"
 
+gem "rubocop-rails-omakase"
+gem "brakeman"
 gem "active_model_serializers", "~> 0.10.13"
 gem "ancestry"
 gem "bootsnap", require: false
