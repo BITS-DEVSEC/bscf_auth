@@ -88,6 +88,8 @@ GEM
     bigdecimal (3.1.9)
     bootsnap (1.18.4)
       msgpack (~> 1.2)
+    brakeman (7.0.0)
+      racc
     bscf-core (0.2.4)
       active_model_serializers
       ancestry (~> 4.1.0)
@@ -379,6 +381,7 @@ DEPENDENCIES
   ancestry
   bcrypt (~> 3.1.7)
   bootsnap
+  brakeman
   bscf-core
   bullet
   debug
