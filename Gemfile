@@ -21,6 +21,7 @@ gem "active_model_serializers", "~> 0.10.13"
 gem "ancestry"
 gem "bootsnap", require: false
 gem "ransack"
+gem "rack-cors"
 gem "jwt"
 gem "tzinfo-data", platforms: %i[mingw mswin x64_mingw jruby]
 
