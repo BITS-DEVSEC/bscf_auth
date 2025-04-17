@@ -20,7 +20,6 @@ RSpec.describe "UserProfiles", type: :request do
 
       it "returns user profile with address" do
         get "/user_profile", headers: { "Authorization" => "Bearer #{token}" }
-        debugger
         expect(response).to have_http_status(:ok)
 
         json = JSON.parse(response.body)

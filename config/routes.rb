@@ -13,4 +13,5 @@ Rails.application.routes.draw do
   post "auth/signup"
 
   get "user_profile", to: "user_profiles#show"
+  get "users", to: "users#index"
 end
