@@ -8,19 +8,17 @@ RSpec.describe "Auth", type: :request do
           first_name: Faker::Name.first_name,
           middle_name: Faker::Name.middle_name,
           last_name: Faker::Name.last_name,
-          phone_number: Faker::PhoneNumber.phone_number,
-          password: Random.hex(6),
-          email: Faker::Internet.email,
-          business_name: Faker::Name.name,
-          tin_number: Random.hex(10),
-          business_type: :retailer,
-          date_of_birth: Date.today,
-          nationality: Faker::Address.country,
+          phone_number: "+251#{Faker::Number.number(digits: 9)}",
+          password: "123456",
+          business_name: Faker::Company.name,
+          tin_number: Faker::Number.number(digits: 10).to_s,
+          business_type: "retailer",
+          date_of_birth: Date.today.strftime("%Y-%m-%d"),
+          nationality: "Ethiopian",
           occupation: "Business Owner",
           source_of_funds: "Business",
-          gender: :male,
-          kyc_status: "pending",
-          fayda_id: Random.hex(10)
+          gender: "male",
+          fayda_id: Faker::Number.number(digits: 10).to_s
         },
         address: {
           city: "Addis Ababa",
@@ -55,7 +53,7 @@ RSpec.describe "Auth", type: :request do
 
   describe "POST /auth/login" do
     let!(:user) do
-      user = create(:user, phone_number: "251911223344", password: "password123")
+      user = create(:user, phone_number: "251911223344", password: "123456")
       create(:user_profile, user: user)
       user
     end
@@ -64,7 +62,7 @@ RSpec.describe "Auth", type: :request do
       params = {
         auth: {
           phone_number: "251911223344",
-          password: "password123"
+          password: "123456"
         }
       }
 
@@ -82,7 +80,7 @@ RSpec.describe "Auth", type: :request do
       params = {
         auth: {
           phone_number: "251911223344",
-          password: "wrong_password"
+          password: "654321"
         }
       }
 
@@ -97,7 +95,7 @@ RSpec.describe "Auth", type: :request do
       params = {
         auth: {
           phone_number: "251999999999",
-          password: "password123"
+          password: "123456"
         }
       }
 
@@ -111,7 +109,7 @@ RSpec.describe "Auth", type: :request do
 
   describe "POST /auth/admin/login" do
     let!(:admin_user) do
-      user = create(:user, phone_number: "251911223344", password: "password123")
+      user = create(:user, phone_number: "251911223344", password: "123456")
       admin_role = create(:role, name: "Admin")
       create(:user_role, user: user, role: admin_role)
       user
@@ -121,7 +119,7 @@ RSpec.describe "Auth", type: :request do
       params = {
         auth: {
           phone_number: "251911223344",
-          password: "password123"
+          password: "123456"
         }
       }
 
@@ -135,14 +133,14 @@ RSpec.describe "Auth", type: :request do
     end
 
     it "fails for non-admin users" do
-      regular_user = create(:user, phone_number: "251922334455", password: "password123")
+      regular_user = create(:user, phone_number: "251922334455", password: "123456")
       user_role = create(:role, name: "User")
       create(:user_role, user: regular_user, role: user_role)
 
       params = {
         auth: {
           phone_number: "251922334455",
-          password: "password123"
+          password: "123456"
         }
       }
 

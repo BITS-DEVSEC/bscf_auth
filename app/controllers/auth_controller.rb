@@ -14,7 +14,7 @@ class AuthController < ApplicationController
           @user_profile.address = @address
 
           if @user_profile.save
-            # Assign default user role
+
             user_role = Bscf::Core::Role.find_or_create_by!(name: "User")
             Bscf::Core::UserRole.find_or_create_by!(user: @user, role: user_role)
 
@@ -116,14 +116,14 @@ class AuthController < ApplicationController
       :first_name, :middle_name, :last_name, :password,
       :phone_number, :business_name, :tin_number, :business_type,
       :date_of_birth, :nationality, :occupation, :source_of_funds, :kyc_status,
-      :gender, :verified_at, :verified_by_id, :email, :fayda_id
+      :gender, :verified_at, :verified_by_id, :fayda_id
     )
   end
 
   def user_params
     signup_params.slice(
       :first_name, :middle_name, :last_name,
-      :password, :phone_number, :email
+      :password, :phone_number
     )
   end
 
