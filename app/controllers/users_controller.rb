@@ -1,14 +1,12 @@
 class UsersController < ApplicationController
   before_action :is_authenticated
   before_action :authenticate_admin
+  include Common
 
-  def index
-    users = Bscf::Core::User.all
-    render json: {
-      success: true,
-      users: users.as_json(except: [ :password_digest ])
-    }
+  def self.inherited_methods
+    %i[index show]
   end
+
 
   private
 
