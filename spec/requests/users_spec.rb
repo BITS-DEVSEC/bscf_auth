@@ -1,62 +1,85 @@
 require 'rails_helper'
 
 RSpec.describe "Users", type: :request do
+  let(:token_service) { Bscf::Core::TokenService.new }
+  let(:admin_user) { create(:user) }
+  let(:admin_role) { create(:role, name: "Admin") }
+  let!(:admin_user_role) { create(:user_role, user: admin_user, role: admin_role) }
+
+  let(:token) do
+    token_service.encode({
+      user: admin_user.as_json(except: [ "password_digest", "created_at", "updated_at" ])
+    })
+  end
+
+  let(:headers) do
+    {
+      "Authorization" => "Bearer #{token}"
+    }
+  end
+
   describe "GET /users" do
-    let(:token_service) { Bscf::Core::TokenService.new }
+    it "lists all users when admin authenticated" do
+      create_list(:user, 3)
 
-    context "when admin user is authenticated" do
-      let!(:admin_user) { create(:user) }
-      let!(:admin_role) { create(:role, name: "Admin") }
-      let!(:admin_user_role) { create(:user_role, user: admin_user, role: admin_role) }
-      let!(:regular_users) { create_list(:user, 3) }
+      get users_url, headers: headers
 
-      let(:token) do
-        token_service.encode({
-          user: admin_user.as_json(except: [ "password_digest", "created_at", "updated_at" ])
-        })
-      end
-
-      it "returns list of all users" do
-        get "/users", headers: { "Authorization" => "Bearer #{token}" }
-
-        expect(response).to have_http_status(:ok)
-
-        json = JSON.parse(response.body)
-        expect(json["success"]).to be true
-        expect(json["users"].length).to eq(4) # admin + 3 regular users
-        expect(json["users"].first.keys).not_to include("password_digest")
-      end
+      result = JSON(response.body)
+      expect(result["success"]).to be_truthy
+      expect(result["data"].count).to eq(4)
+      expect(result["data"].first.keys).to include("id", "first_name", "last_name", "email", "phone_number", "user_profile", "roles")
     end
 
-    context "when non-admin user is authenticated" do
-      let!(:user) { create(:user) }
-      let!(:user_role) { create(:role, name: "User") }
-      let!(:user_user_role) { create(:user_role, user: user, role: user_role) }
+    it "returns unauthorized for non-admin user" do
+      user = create(:user)
+      user_role = create(:role, name: "User")
+      create(:user_role, user: user, role: user_role)
 
-      let(:token) do
-        token_service.encode({
-          user: user.as_json(except: [ "password_digest", "created_at", "updated_at" ])
-        })
-      end
+      non_admin_token = token_service.encode({
+        user: user.as_json(except: [ "password_digest", "created_at", "updated_at" ])
+      })
 
-      it "returns unauthorized" do
-        get "/users", headers: { "Authorization" => "Bearer #{token}" }
+      get users_url, headers: { "Authorization" => "Bearer #{non_admin_token}" }
 
-        expect(response).to have_http_status(:unauthorized)
-        json = JSON.parse(response.body)
-        expect(json["success"]).to be false
-        expect(json["error"]).to eq("Unauthorized access")
-      end
+      result = JSON(response.body)
+      expect(result["success"]).to be_falsey
+      expect(result["error"]).to eq("Unauthorized access")
+      expect(response).to have_http_status(:unauthorized)
+    end
+  end
+
+  describe "GET /users/:id" do
+    it "shows user details with associations" do
+      target_user = create(:user)
+      user_profile = create(:user_profile, user: target_user)
+      user_role = create(:role, name: "User")
+      create(:user_role, user: target_user, role: user_role)
+
+      get user_url(target_user), headers: headers
+
+      result = JSON(response.body)
+      expect(result["success"]).to be_truthy
+      expect(result["data"]["id"]).to eq(target_user.id)
+      expect(result["data"]["user_profile"]).to be_present
+      expect(result["data"]["roles"]).to be_present
+      expect(result["data"]["user_roles"]).to be_present
     end
 
-    context "when user is not authenticated" do
-      it "returns unauthorized" do
-        get "/users"
+    it "returns unauthorized for non-admin user" do
+      user = create(:user)
+      user_role = create(:role, name: "User")
+      create(:user_role, user: user, role: user_role)
 
-        expect(response).to have_http_status(:unauthorized)
-        json = JSON.parse(response.body)
-        expect(json["error"]).to eq("Not authenticated")
-      end
+      non_admin_token = token_service.encode({
+        user: user.as_json(except: [ "password_digest", "created_at", "updated_at" ])
+      })
+
+      get user_url(user), headers: { "Authorization" => "Bearer #{non_admin_token}" }
+
+      result = JSON(response.body)
+      expect(result["success"]).to be_falsey
+      expect(result["error"]).to eq("Unauthorized access")
+      expect(response).to have_http_status(:unauthorized)
     end
   end
 end
