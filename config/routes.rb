@@ -14,5 +14,11 @@ Rails.application.routes.draw do
 
   get "user_profile", to: "user_profiles#show"
 
+  resources :user_profiles do
+    member do
+      put "update_kyc"
+    end
+  end
+
   resources :users, only: [ :index, :show ]
 end
