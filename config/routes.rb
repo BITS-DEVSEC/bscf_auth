@@ -1,4 +1,5 @@
 Rails.application.routes.draw do
+  get "user_roles/assign_driver"
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
@@ -21,4 +22,10 @@ Rails.application.routes.draw do
   end
 
   resources :users, only: [ :index, :show ]
+
+  resources :user_roles, only: [] do
+    collection do
+      post :assign_driver
+    end
+  end
 end
