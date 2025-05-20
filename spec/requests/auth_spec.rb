@@ -37,6 +37,9 @@ RSpec.describe "Auth", type: :request do
       expect(result["user"]["phone_number"]).to eq(valid_params[:user][:phone_number])
       expect(result["business"]["business_name"]).to eq(valid_params[:user][:business_name])
       expect(result["address"]["city"]).to eq(valid_params[:address][:city])
+      expect(result["user_profile"]).to be_present
+      expect(result["user_profile"]["date_of_birth"].to_date).to eq(valid_params[:user][:date_of_birth].to_date)
+      expect(result["user_profile"]["gender"]).to eq(valid_params[:user][:gender])
     end
 
     it "fails with invalid parameters" do
@@ -162,7 +165,14 @@ RSpec.describe "Auth", type: :request do
           middle_name: Faker::Name.middle_name,
           last_name: Faker::Name.last_name,
           phone_number: "+251#{Faker::Number.number(digits: 9)}",
-          password: "123456"
+          password: "123456",
+          # Add user_profile attributes for driver
+          date_of_birth: Faker::Date.birthday(min_age: 18, max_age: 65).strftime("%Y-%m-%d"),
+          gender: [ "male", "female" ].sample,
+          nationality: "Ethiopian",
+          occupation: "Driver",
+          source_of_funds: "Salary",
+          fayda_id: Faker::Number.number(digits: 10).to_s
         },
         vehicle: {
           plate_number: "AA-#{Faker::Number.number(digits: 5)}",
@@ -171,12 +181,21 @@ RSpec.describe "Auth", type: :request do
           model: Faker::Vehicle.model,
           year: Faker::Vehicle.year.to_i, # Ensure year is an integer
           color: Faker::Vehicle.color
+        },
+        # Add address attributes for driver, assuming it's directly under params for now
+        # or adjust if it should be nested under user or vehicle
+        address: {
+          city: "Addis Ababa",
+          sub_city: "Bole",
+          woreda: "03",
+          latitude: "9.0222",
+          longitude: "38.7468"
         }
       }
     end
 
     context "with valid parameters" do
-      it "creates a new driver user, vehicle, and assigns driver role successfully" do
+      it "creates a new driver user, user_profile, vehicle, and assigns driver role successfully" do
         post "/auth/driver/signup", params: valid_driver_params, as: :json
 
         result = JSON.parse(response.body)
@@ -184,12 +203,18 @@ RSpec.describe "Auth", type: :request do
         expect(response).to have_http_status(:created)
         expect(result["success"]).to be true
         expect(result["user"]["phone_number"]).to eq(valid_driver_params[:user][:phone_number])
+        expect(result["user_profile"]).to be_present
+        expect(result["user_profile"]["gender"]).to eq(valid_driver_params[:user][:gender])
+        expect(result["user_profile"]["occupation"]).to eq("Driver")
         expect(result["vehicle"]["plate_number"]).to eq(valid_driver_params[:vehicle][:plate_number])
         expect(result["role"]["name"]).to eq("Driver")
+        expect(result["address"]["city"]).to eq(valid_driver_params[:address][:city])
 
-        # Verify database records
+
         created_user = Bscf::Core::User.find_by(phone_number: valid_driver_params[:user][:phone_number])
         expect(created_user).to be_present
+        expect(created_user.user_profile).to be_present
+        expect(created_user.user_profile.address).to be_present
       end
     end
 

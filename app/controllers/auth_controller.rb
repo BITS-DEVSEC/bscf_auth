@@ -102,47 +102,67 @@ class AuthController < ApplicationController
 
   def driver_signup
     ActiveRecord::Base.transaction do
-      @user = Bscf::Core::User.new(driver_user_params)
+      @user = Bscf::Core::User.new(driver_signup_user_core_params) # Changed from driver_user_params
 
       if @user.save
-        @vehicle = Bscf::Core::Vehicle.new(vehicle_params)
-        @vehicle.driver = @user # Associate vehicle with the user
+        @address = Bscf::Core::Address.new(address_params) # Assuming address_params can be reused
 
-        if @vehicle.save
-          driver_role = Bscf::Core::Role.find_by(name: "Driver")
+        if @address.save
+          @user_profile = Bscf::Core::UserProfile.new(driver_signup_user_profile_params)
+          @user_profile.user = @user
+          @user_profile.address = @address
 
-          unless driver_role
-            render json: { success: false, error: "Driver role not found. Please ensure it exists." }, status: :not_found
-            raise ActiveRecord::Rollback
-          end
+          if @user_profile.save
+            @vehicle = Bscf::Core::Vehicle.new(vehicle_params)
+            @vehicle.driver = @user
 
-          @user_role = Bscf::Core::UserRole.new(user: @user, role: driver_role)
+            if @vehicle.save
+              driver_role = Bscf::Core::Role.find_by(name: "Driver")
 
-          if @user_role.save
-            render json: {
-              success: true,
-              user: @user.as_json(except: [ :password_digest ]),
-              vehicle: @vehicle.as_json,
-              role: driver_role.as_json
-            }, status: :created
+              unless driver_role
+                driver_role = Bscf::Core::Role.create!(name: "Driver") if driver_role.nil?
+                if driver_role.nil? || driver_role.invalid?
+                   render json: { success: false, error: "Driver role could not be found or created." }, status: :internal_server_error
+                   raise ActiveRecord::Rollback
+                end
+              end
+
+              @user_role = Bscf::Core::UserRole.new(user: @user, role: driver_role)
+
+              if @user_role.save
+                render json: {
+                  success: true,
+                  user: @user.as_json(except: [ :password_digest ]),
+                  user_profile: @user_profile.as_json,
+                  address: @address.as_json,
+                  vehicle: @vehicle.as_json,
+                  role: driver_role.as_json
+                }, status: :created
+              else
+                render json: { success: false, errors: @user_role.errors.full_messages }, status: :unprocessable_entity
+                raise ActiveRecord::Rollback
+              end
+            else
+              render json: { success: false, errors: @vehicle.errors.full_messages }, status: :unprocessable_entity
+              raise ActiveRecord::Rollback
+            end
           else
-            render json: { success: false, errors: @user_role.errors.full_messages }, status: :unprocessable_entity
+            render json: { success: false, errors: @user_profile.errors.full_messages }, status: :unprocessable_entity
             raise ActiveRecord::Rollback
           end
         else
-          render json: { success: false, errors: @vehicle.errors.full_messages }, status: :unprocessable_entity
+          render json: { success: false, errors: @address.errors.full_messages }, status: :unprocessable_entity
           raise ActiveRecord::Rollback
         end
       else
         render json: { success: false, errors: @user.errors.full_messages }, status: :unprocessable_entity
-        raise ActiveRecord::Rollback
       end
     end
-  rescue ActiveRecord::RecordNotFound => e
-    render json: { success: false, error: e.message }, status: :not_found
+  rescue ActiveRecord::RecordInvalid => e
+    render json: { success: false, errors: e.record.errors.full_messages }, status: :unprocessable_entity
   rescue StandardError => e
     render json: { success: false, error: "An unexpected error occurred: #{e.message}" }, status: :internal_server_error
-    raise ActiveRecord::Rollback # Ensure rollback on any other standard error within the transaction
+    raise ActiveRecord::Rollback if ActiveRecord::Base.connection.transaction_open? # Ensure rollback on unexpected errors
   end
 
 
@@ -182,9 +202,19 @@ class AuthController < ApplicationController
     params.require(:address).permit(:city, :sub_city, :woreda, :latitude, :longitude, :house_number)
   end
 
-  def driver_user_params
+  # Replaces the old driver_user_params
+  def driver_signup_user_core_params
     params.require(:user).permit(
       :first_name, :middle_name, :last_name, :phone_number, :password, :password_confirmation
+    )
+  end
+
+  # New params method for driver's user profile information
+  # Assumes profile fields are nested under params[:user]
+  def driver_signup_user_profile_params
+    params.require(:user).permit(
+      :date_of_birth, :nationality, :occupation, :source_of_funds,
+      :gender, :fayda_id # fayda_id is optional as per schema
     )
   end
 
