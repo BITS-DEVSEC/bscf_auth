@@ -12,6 +12,7 @@ Rails.application.routes.draw do
   post "auth/login"
   post "auth/admin/login", to: "auth#admin_login"
   post "auth/signup"
+  post "auth/driver/signup", to: "auth#driver_signup"
 
   get "user_profile", to: "user_profiles#show"
 
