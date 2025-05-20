@@ -30,7 +30,7 @@ RSpec.describe "Auth", type: :request do
       }
     end
     it "creates a new user successfully" do
-      post "/auth/signup", params: valid_params
+      post "/auth/signup", params: valid_params, as: :json
       result = JSON.parse(response.body)
       expect(response).to have_http_status(:created)
       expect(result["success"]).to be true
@@ -43,7 +43,7 @@ RSpec.describe "Auth", type: :request do
       invalid_params = valid_params
       invalid_params[:user][:phone_number] = nil
 
-      post "/auth/signup", params: invalid_params
+      post "/auth/signup", params: invalid_params, as: :json
 
       result = JSON.parse(response.body)
       expect(response).to have_http_status(:unprocessable_entity)
@@ -66,7 +66,7 @@ RSpec.describe "Auth", type: :request do
         }
       }
 
-      post "/auth/login", params: params
+      post "/auth/login", params: params, as: :json # Added as: :json
 
       result = JSON.parse(response.body)
       expect(response).to have_http_status(:ok)
@@ -84,9 +84,9 @@ RSpec.describe "Auth", type: :request do
         }
       }
 
-      post "/auth/login", params: params
+      post "/auth/login", params: params, as: :json
 
-      result = JSON.parse(response.body)
+      result = JSON(response.body)
       expect(response).to have_http_status(:unauthorized)
       expect(result["error"]).to eq("Invalid phone number or password")
     end
@@ -99,7 +99,7 @@ RSpec.describe "Auth", type: :request do
         }
       }
 
-      post "/auth/login", params: params
+      post "/auth/login", params: params, as: :json
 
       result = JSON.parse(response.body)
       expect(response).to have_http_status(:unauthorized)
@@ -123,7 +123,7 @@ RSpec.describe "Auth", type: :request do
         }
       }
 
-      post "/auth/admin/login", params: params
+      post "/auth/admin/login", params: params, as: :json # Added as: :json
 
       result = JSON.parse(response.body)
       expect(response).to have_http_status(:ok)
@@ -134,7 +134,7 @@ RSpec.describe "Auth", type: :request do
 
     it "fails for non-admin users" do
       regular_user = create(:user, phone_number: "251922334455", password: "123456")
-      user_role = create(:role, name: "User")
+      user_role = create(:role, name: "User") # Ensure "User" role exists for this test
       create(:user_role, user: regular_user, role: user_role)
 
       params = {
@@ -144,11 +144,67 @@ RSpec.describe "Auth", type: :request do
         }
       }
 
-      post "/auth/admin/login", params: params
+      post "/auth/admin/login", params: params, as: :json # Added as: :json
 
       result = JSON.parse(response.body)
       expect(response).to have_http_status(:unauthorized)
       expect(result["error"]).to eq("Unauthorized access")
+    end
+  end
+
+  describe "POST /auth/driver/signup" do
+    let!(:driver_role) { create(:role, name: "Driver") } # Ensure Driver role exists
+
+    let(:valid_driver_params) do
+      {
+        user: {
+          first_name: Faker::Name.first_name,
+          middle_name: Faker::Name.middle_name,
+          last_name: Faker::Name.last_name,
+          phone_number: "+251#{Faker::Number.number(digits: 9)}",
+          password: "123456"
+        },
+        vehicle: {
+          plate_number: "AA-#{Faker::Number.number(digits: 5)}",
+          vehicle_type: "Sedan",
+          brand: Faker::Vehicle.make,
+          model: Faker::Vehicle.model,
+          year: Faker::Vehicle.year.to_i, # Ensure year is an integer
+          color: Faker::Vehicle.color
+        }
+      }
+    end
+
+    context "with valid parameters" do
+      it "creates a new driver user, vehicle, and assigns driver role successfully" do
+        post "/auth/driver/signup", params: valid_driver_params, as: :json
+
+        result = JSON.parse(response.body)
+
+        expect(response).to have_http_status(:created)
+        expect(result["success"]).to be true
+        expect(result["user"]["phone_number"]).to eq(valid_driver_params[:user][:phone_number])
+        expect(result["vehicle"]["plate_number"]).to eq(valid_driver_params[:vehicle][:plate_number])
+        expect(result["role"]["name"]).to eq("Driver")
+
+        # Verify database records
+        created_user = Bscf::Core::User.find_by(phone_number: valid_driver_params[:user][:phone_number])
+        expect(created_user).to be_present
+      end
+    end
+
+    context "with invalid user parameters" do
+      it "fails to create a driver if user phone_number is missing" do
+        invalid_params = valid_driver_params.deep_dup
+        invalid_params[:user][:phone_number] = nil
+
+        post "/auth/driver/signup", params: invalid_params, as: :json
+        result = JSON.parse(response.body)
+
+        expect(response).to have_http_status(:unprocessable_entity)
+        expect(result["success"]).to be false
+        expect(result["errors"]).to include("Phone number can't be blank")
+      end
     end
   end
 end
