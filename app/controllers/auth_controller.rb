@@ -100,6 +100,51 @@ class AuthController < ApplicationController
     }
   end
 
+  def driver_signup
+    ActiveRecord::Base.transaction do
+      @user = Bscf::Core::User.new(driver_user_params)
+
+      if @user.save
+        @vehicle = Bscf::Core::Vehicle.new(vehicle_params)
+        @vehicle.driver = @user # Associate vehicle with the user
+
+        if @vehicle.save
+          driver_role = Bscf::Core::Role.find_by(name: "Driver")
+
+          unless driver_role
+            render json: { success: false, error: "Driver role not found. Please ensure it exists." }, status: :not_found
+            raise ActiveRecord::Rollback
+          end
+
+          @user_role = Bscf::Core::UserRole.new(user: @user, role: driver_role)
+
+          if @user_role.save
+            render json: {
+              success: true,
+              user: @user.as_json(except: [ :password_digest ]),
+              vehicle: @vehicle.as_json,
+              role: driver_role.as_json
+            }, status: :created
+          else
+            render json: { success: false, errors: @user_role.errors.full_messages }, status: :unprocessable_entity
+            raise ActiveRecord::Rollback
+          end
+        else
+          render json: { success: false, errors: @vehicle.errors.full_messages }, status: :unprocessable_entity
+          raise ActiveRecord::Rollback
+        end
+      else
+        render json: { success: false, errors: @user.errors.full_messages }, status: :unprocessable_entity
+        raise ActiveRecord::Rollback
+      end
+    end
+  rescue ActiveRecord::RecordNotFound => e
+    render json: { success: false, error: e.message }, status: :not_found
+  rescue StandardError => e
+    render json: { success: false, error: "An unexpected error occurred: #{e.message}" }, status: :internal_server_error
+    raise ActiveRecord::Rollback # Ensure rollback on any other standard error within the transaction
+  end
+
 
   private
 
@@ -122,26 +167,30 @@ class AuthController < ApplicationController
 
   def user_params
     signup_params.slice(
-      :first_name, :middle_name, :last_name,
-      :password, :phone_number
+      :first_name, :middle_name, :last_name, :password, :phone_number
     )
   end
 
   def user_profile_params
     signup_params.slice(
-      :date_of_birth, :nationality, :occupation,
-      :source_of_funds, :kyc_status, :gender,
-      :verified_at, :verified_by_id, :fayda_id
+      :date_of_birth, :nationality, :occupation, :source_of_funds, :kyc_status,
+      :gender, :verified_at, :verified_by_id, :fayda_id
     )
   end
 
   def address_params
-      params.require(:address).permit(
-          :city,
-          :sub_city,
-          :woreda,
-          :latitude,
-          :longitude
-      )
+    params.require(:address).permit(:city, :sub_city, :woreda, :latitude, :longitude, :house_number)
+  end
+
+  def driver_user_params
+    params.require(:user).permit(
+      :first_name, :middle_name, :last_name, :phone_number, :password, :password_confirmation
+    )
+  end
+
+  def vehicle_params
+    params.require(:vehicle).permit(
+      :plate_number, :vehicle_type, :brand, :model, :year, :color
+    )
   end
 end
