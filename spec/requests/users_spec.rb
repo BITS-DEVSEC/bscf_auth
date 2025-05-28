@@ -31,6 +31,7 @@ RSpec.describe "Users", type: :request do
       result = JSON(response.body)
       expect(result["success"]).to be_truthy
       expect(result["data"].count).to eq 3
+      expect(result["data"].first.keys).to include("id", "first_name", "middle_name", "last_name", "email", "phone_number", "vehicle")
       expect(response).to have_http_status(:ok)
     end
 
@@ -40,6 +41,7 @@ RSpec.describe "Users", type: :request do
       result = JSON(response.body)
       expect(result["success"]).to be_truthy
       expect(result["data"].count).to eq 2
+      expect(result["data"].first.keys).to include("id", "first_name", "middle_name", "last_name", "email", "phone_number", "business")
       expect(response).to have_http_status(:ok)
     end
 
