@@ -3,4 +3,7 @@ class UserSerializer < ActiveModel::Serializer
   has_one :user_profile
   has_many :user_roles
   has_many :roles, through: :user_roles
+
+  has_one :business
+  has_one :vehicle
 end

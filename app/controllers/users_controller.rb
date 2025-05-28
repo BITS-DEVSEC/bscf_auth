@@ -18,19 +18,9 @@ class UsersController < ApplicationController
                            .where(roles: { name: role })
                            .distinct
 
-    users_with_info = users.map do |user|
-      user_data = user.as_json
-      if role == "Driver"
-        user_data.merge!(vehicle: user.vehicle&.as_json)
-      else # User role
-        user_data.merge!(business: user.business&.as_json)
-      end
-      user_data
-    end
-
     render json: {
       success: true,
-      data: users_with_info
+      data: ActiveModelSerializers::SerializableResource.new(users)
     }
   end
 
