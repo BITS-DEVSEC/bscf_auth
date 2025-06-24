@@ -1,6 +1,6 @@
 class UsersController < ApplicationController
   before_action :is_authenticated
-  before_action :authenticate_admin
+  before_action :authenticate_admin, except: [ :has_virtual_account ]
   include Common
 
   def self.inherited_methods
@@ -21,6 +21,15 @@ class UsersController < ApplicationController
     render json: {
       success: true,
       data: ActiveModelSerializers::SerializableResource.new(users)
+    }
+  end
+
+  def has_virtual_account
+    has_account = Bscf::Core::VirtualAccount.exists?(user_id: current_user.id)
+
+    render json: {
+      success: true,
+      has_virtual_account: has_account
     }
   end
 

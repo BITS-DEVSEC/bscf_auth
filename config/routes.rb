@@ -17,6 +17,7 @@ Rails.application.routes.draw do
   get "user_profile", to: "user_profiles#show"
 
   get "users/by_role", to: "users#by_role"
+  get "users/has_virtual_account", to: "users#has_virtual_account"
 
   resources :user_profiles do
     member do
