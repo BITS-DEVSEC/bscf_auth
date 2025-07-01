@@ -18,25 +18,35 @@ class AuthController < ApplicationController
             user_role = Bscf::Core::Role.find_or_create_by!(name: "User")
             Bscf::Core::UserRole.find_or_create_by!(user: @user, role: user_role)
 
-            @business = Bscf::Core::Business.new(
-              user: @user,
-              business_name: signup_params[:business_name],
-              tin_number: signup_params[:tin_number],
-              business_type: signup_params[:business_type]
-            )
+            if signup_params[:business_name].present?
+              @business = Bscf::Core::Business.new(
+                user: @user,
+                business_name: signup_params[:business_name],
+                tin_number: signup_params[:tin_number],
+                business_type: signup_params[:business_type]
+              )
 
-            if @business.save
+              if @business.save
+                render json: {
+                  success: true,
+                  user: @user.as_json(except: [ :password_digest ]),
+                  user_profile: @user_profile,
+                  business: @business,
+                  address: @address
+                }, status: :created
+                return
+              else
+                render json: { errors: @business.errors.full_messages }, status: :unprocessable_entity
+                raise ActiveRecord::Rollback
+              end
+            else
               render json: {
                 success: true,
                 user: @user.as_json(except: [ :password_digest ]),
                 user_profile: @user_profile,
-                business: @business,
                 address: @address
               }, status: :created
               return
-            else
-              render json: { errors: @business.errors.full_messages }, status: :unprocessable_entity
-              raise ActiveRecord::Rollback
             end
           else
             render json: { errors: @user_profile.errors.full_messages }, status: :unprocessable_entity
