@@ -40,6 +40,8 @@ RSpec.describe "Auth", type: :request do
       expect(result["user_profile"]).to be_present
       expect(result["user_profile"]["date_of_birth"].to_date).to eq(valid_params[:user][:date_of_birth].to_date)
       expect(result["user_profile"]["gender"]).to eq(valid_params[:user][:gender])
+      created_user = Bscf::Core::User.find_by(phone_number: valid_params[:user][:phone_number])
+      expect(Bscf::Core::VirtualAccount.find_by(user_id: created_user.id)).to be_present
     end
 
     it "fails with invalid parameters" do
@@ -215,6 +217,7 @@ RSpec.describe "Auth", type: :request do
         expect(created_user).to be_present
         expect(created_user.user_profile).to be_present
         expect(created_user.user_profile.address).to be_present
+        expect(Bscf::Core::VirtualAccount.find_by(user_id: created_user.id)).to be_present
       end
     end
 

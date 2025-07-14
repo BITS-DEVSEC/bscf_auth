@@ -17,6 +17,7 @@ class AuthController < ApplicationController
 
             user_role = Bscf::Core::Role.find_or_create_by!(name: "User")
             Bscf::Core::UserRole.find_or_create_by!(user: @user, role: user_role)
+            create_virtual_account(@user)
 
             if signup_params[:business_name].present?
               @business = Bscf::Core::Business.new(
@@ -140,6 +141,7 @@ class AuthController < ApplicationController
               @user_role = Bscf::Core::UserRole.new(user: @user, role: driver_role)
 
               if @user_role.save
+                create_virtual_account(@user)
                 render json: {
                   success: true,
                   user: @user.as_json(except: [ :password_digest ]),
@@ -180,6 +182,20 @@ class AuthController < ApplicationController
 
   def token_service
     @token_service ||= Bscf::Core::TokenService.new
+  end
+
+  def create_virtual_account(user)
+    Bscf::Core::VirtualAccount.create!(
+      user: user,
+      branch_code: "VA#{SecureRandom.hex(4).upcase}",
+      product_scheme: "SAVINGS",
+      voucher_type: "REGULAR",
+      balance: 0.0,
+      interest_rate: 2.5,
+      interest_type: :simple,
+      status: :pending,
+      cbs_account_number: "CBS#{SecureRandom.hex(4).upcase}"
+    )
   end
 
   def auth_params
