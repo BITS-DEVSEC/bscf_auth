@@ -142,7 +142,7 @@ RSpec.describe "UserProfiles", type: :request do
 
         result = JSON(response.body)
         expect(result["success"]).to be_falsey
-        expect(result["error"]).to eq("Not authorized")
+        expect(result["error"]).to eq("You are not authorized to perform this action.")
         expect(response).to have_http_status(:unauthorized)
       end
     end
