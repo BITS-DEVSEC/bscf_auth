@@ -14,7 +14,7 @@ class AuthController < ApplicationController
           @user_profile.address = @address
 
           if @user_profile.save
-
+            create_virtual_account(@user)
             user_role = Bscf::Core::Role.find_or_create_by!(name: "User")
             Bscf::Core::UserRole.find_or_create_by!(user: @user, role: user_role)
 
@@ -140,6 +140,7 @@ class AuthController < ApplicationController
               @user_role = Bscf::Core::UserRole.new(user: @user, role: driver_role)
 
               if @user_role.save
+                create_virtual_account(@user)
                 render json: {
                   success: true,
                   user: @user.as_json(except: [ :password_digest ]),
@@ -190,7 +191,7 @@ class AuthController < ApplicationController
       voucher_type: "REGULAR",
       balance: 0.0,
       interest_rate: 2.5,
-      locked_amount: 0.0
+      locked_amount: 0.0,
       interest_type: :simple,
       status: :pending,
       cbs_account_number: "CBS#{SecureRandom.hex(4).upcase}"
