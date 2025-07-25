@@ -67,7 +67,7 @@ RSpec.describe "Users", type: :request do
       expect(response).to have_http_status(:unauthorized)
       result = JSON(response.body)
       expect(result["success"]).to be_falsey
-      expect(result["error"]).to eq "Unauthorized access"
+      expect(result["error"]).to eq "You are not authorized to perform this action."
     end
   end
 
@@ -95,7 +95,8 @@ RSpec.describe "Users", type: :request do
           branch_code: "001",
           product_scheme: "SAVINGS",
           voucher_type: "REGULAR",
-          status: 1
+          status: 1,
+         locked_amount: 0
         )
       end
 
