@@ -1,13 +1,23 @@
 class UsersController < ApplicationController
   before_action :is_authenticated
-  before_action :authenticate_admin, except: [ :has_virtual_account ]
   include Common
 
   def self.inherited_methods
     %i[index show]
   end
 
+  def index
+    authorize Bscf::Core::User
+    super
+  end
+
+  def show
+    authorize @obj
+    super
+  end
+
   def by_role
+    authorize Bscf::Core::User
     role = params[:role]
     unless [ "Driver", "User" ].include?(role)
       return render json: { success: false, error: "Invalid role specified" }, status: :bad_request
@@ -25,6 +35,7 @@ class UsersController < ApplicationController
   end
 
   def has_virtual_account
+    authorize Bscf::Core::User
     has_account = Bscf::Core::VirtualAccount.exists?(user_id: current_user.id)
 
     render json: {
@@ -35,10 +46,7 @@ class UsersController < ApplicationController
 
   private
 
-  def authenticate_admin
-    return render json: { success: false, error: "Unauthorized access" }, status: :unauthorized if current_user.nil?
-
-    user_role = current_user.user_roles.find { |ur| ur.role.name == "Admin" }
-    render json: { success: false, error: "Unauthorized access" }, status: :unauthorized unless user_role
+  def model_params
+    params.require(:user).permit(:first_name, :middle_name, :last_name, :email, :phone_number, :password)
   end
 end
