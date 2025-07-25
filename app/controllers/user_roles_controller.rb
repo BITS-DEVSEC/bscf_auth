@@ -2,6 +2,7 @@ class UserRolesController < ApplicationController
   before_action :is_authenticated
 
   def assign_driver
+    authorize Bscf::Core::UserRole
     return render json: { success: false, error: "User ID is required" }, status: :unprocessable_entity unless params[:user_id].present?
 
     begin
