@@ -2,9 +2,9 @@ require 'rails_helper'
 
 RSpec.describe "UserRoles", type: :request do
   let(:token_service) { Bscf::Core::TokenService.new }
-  let!(:acting_user) { create(:user) } # Can be any authenticated user
-  let!(:user_role) { create(:role, name: "User") } # A generic role for the acting_user
-  let!(:acting_user_role_assignment) { create(:user_role, user: acting_user, role: user_role) }
+  let!(:admin_role) { create(:role, name: "Admin") }
+  let!(:acting_user) { create(:user) }
+  let!(:acting_user_role_assignment) { create(:user_role, user: acting_user, role: admin_role) }
 
   let(:headers) do
     token = token_service.encode({ user: acting_user.as_json(except: [ "password_digest", "created_at", "updated_at" ]) })
